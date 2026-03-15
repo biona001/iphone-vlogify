@@ -1,16 +1,4 @@
-# Vlogify
+# Vlogify your Iphone Videos and Live Photos!
 
-Features:
-
-```
-input: Live Photos / iPhone videos
-↓
-auto extract GPS
-↓
-auto detect landmark
-↓
-auto generate travel captions
-↓
-export vlog clips
-```
+Just another hobby project, inspired by [aidvid.com](https://www.aidvid.com/)
 

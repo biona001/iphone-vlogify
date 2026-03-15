@@ -1,0 +1,22 @@
+[project]
+name = "iphone-vlogify"
+version = "0.1.0"
+description = "Automatically generate vlog captions from iPhone photos and videos"
+authors = [{name="Your Name"}]
+readme = "README.md"
+requires-python = ">=3.9"
+
+dependencies = [
+    "geopy",
+    "moviepy",
+    "exifread",
+    "ffmpeg-python",
+]
+
+[project.scripts]
+vlogify = "vlogify.cli:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
