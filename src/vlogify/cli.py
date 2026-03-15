@@ -44,26 +44,40 @@ def extract_all_gps(files):
 
     return results
 
-
 def process_directory(path: Path):
 
-    files = [f for f in path.iterdir() if f.suffix.lower() in SUPPORTED_EXT]
+    files = [
+        f for f in path.iterdir()
+        if f.suffix.lower() in SUPPORTED_EXT
+    ]
 
     if not files:
         print("No supported media files found.")
         return
 
-    files_with_coords = extract_all_gps(files)
+    # Step 1: Extract GPS + timestamps
+    files_with_coords = []
+
+    for file in files:
+
+        gps = extract_gps(str(file))
+
+        if not gps:
+            continue
+
+        lat, lon = gps
+        timestamp = extract_timestamp(str(file))
+
+        files_with_coords.append((file, lat, lon, timestamp))
 
     if not files_with_coords:
         print("No GPS metadata found.")
         return
 
+    # Step 2: Cluster by location
     clusters = cluster_locations(files_with_coords)
 
-    cache = LocationCache()
-
-    # sort group chapters by time
+    # Step 3: Sort clusters by earliest timestamp
     sorted_clusters = sorted(
         clusters.values(),
         key=lambda items: min(
@@ -71,22 +85,33 @@ def process_directory(path: Path):
         )
     )
 
+    # Step 4: Geocode ONCE per cluster
+    cluster_cache = {}
+
     for items in sorted_clusters:
 
-        lat = items[0][1]
-        lon = items[0][2]
+        cluster_id = id(items)  # unique per cluster
 
-        location = cache.get(lat, lon)
+        # Use cached location if available
+        if cluster_id not in cluster_cache:
 
-        if not location:
+            lat = items[0][1]
+            lon = items[0][2]
+
             location = reverse_geocode(lat, lon)
-            cache.set(lat, lon, location)
+
+            cluster_cache[cluster_id] = location
+
+        location = cluster_cache[cluster_id]
 
         print(f"\n📍 {location}")
 
-        for file, _, _, timestamp in sorted(items, key=lambda x: x[3] or 0):
+        # Step 5: Sort files within cluster by time
+        for file, _, _, _ in sorted(
+            items,
+            key=lambda x: x[3] or 0
+        ):
             print(f"    {file.name}")
-
 
 def main():
 
