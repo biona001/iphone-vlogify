@@ -3,7 +3,6 @@ from pathlib import Path
 from vlogify.metadata import extract_gps
 from vlogify.geocode import reverse_geocode
 from vlogify.location_cache import LocationCache
-from vlogify.clustering import cluster_locations
 from vlogify.metadata import extract_timestamp
 
 SUPPORTED_EXT = {".mov", ".mp4", ".jpg", ".jpeg", ".heic"}
@@ -44,7 +43,7 @@ def extract_all_gps(files):
 
     return results
 
-def process_directory(path: Path):
+def process_directory(path: Path, cache: LocationCache):
 
     files = [
         f for f in path.iterdir()
@@ -55,7 +54,7 @@ def process_directory(path: Path):
         print("No supported media files found.")
         return
 
-    # Step 1: Extract GPS + timestamps
+    # Extract GPS + timestamps
     files_with_coords = []
 
     for file in files:
@@ -74,44 +73,17 @@ def process_directory(path: Path):
         print("No GPS metadata found.")
         return
 
-    # Step 2: Cluster by location
-    clusters = cluster_locations(files_with_coords)
+    # Sort by timestamp (fallback to filename)
+    files_with_coords.sort(key=lambda x: (x[3] or 0, x[0].name))
 
-    # Step 3: Sort clusters by earliest timestamp
-    sorted_clusters = sorted(
-        clusters.values(),
-        key=lambda items: min(
-            t for _, _, _, t in items if t is not None
-        )
-    )
+    for file, lat, lon, _ in files_with_coords:
+        location = cache.get(lat, lon)
 
-    # Step 4: Geocode ONCE per cluster
-    cluster_cache = {}
-
-    for items in sorted_clusters:
-
-        cluster_id = id(items)  # unique per cluster
-
-        # Use cached location if available
-        if cluster_id not in cluster_cache:
-
-            lat = items[0][1]
-            lon = items[0][2]
-
+        if not location:
             location = reverse_geocode(lat, lon)
+            cache.set(lat, lon, location)
 
-            cluster_cache[cluster_id] = location
-
-        location = cluster_cache[cluster_id]
-
-        print(f"\n📍 {location}")
-
-        # Step 5: Sort files within cluster by time
-        for file, _, _, _ in sorted(
-            items,
-            key=lambda x: x[3] or 0
-        ):
-            print(f"    {file.name}")
+        print(f"{file.name} → {location}")
 
 def main():
 
@@ -131,7 +103,7 @@ def main():
         process_file(path, cache)
 
     elif path.is_dir():
-        process_directory(path)
+        process_directory(path, cache)
 
     else:
         print("Unsupported path type.")
