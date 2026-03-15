@@ -1,5 +1,5 @@
+from datetime import datetime
 import exiftool
-
 
 def extract_gps(file_path):
     """
@@ -23,3 +23,21 @@ def extract_gps(file_path):
 
     return None
 
+def extract_timestamp(file_path):
+
+    with exiftool.ExifToolHelper() as et:
+        metadata = et.get_metadata(file_path)[0]
+
+    timestamp = (
+        metadata.get("QuickTime:CreateDate")
+        or metadata.get("EXIF:DateTimeOriginal")
+    )
+
+    if not timestamp:
+        return None
+
+    # format example: "2026:03:11 01:03:22"
+    try:
+        return datetime.strptime(timestamp, "%Y:%m:%d %H:%M:%S")
+    except Exception:
+        return None
