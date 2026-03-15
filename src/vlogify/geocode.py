@@ -67,32 +67,38 @@ def _short_name(location):
 def reverse_geocode(lat, lon):
 
     try:
-
-        _respect_rate_limit()
-
         location = geolocator.reverse(
             (lat, lon),
-            language="en",
-            exactly_one=True
+            exactly_one=True,
+            addressdetails=True
         )
 
         if not location:
-            raise RuntimeError("Geocoder returned no result")
+            return "Unknown location"
 
-        return _short_name(location)
+        addr = location.raw.get("address", {})
 
-    except (GeocoderTimedOut, GeocoderUnavailable):
-        print(
-            "\nERROR: Geocoding service timed out.\n"
-            "This usually means the public Nominatim server is overloaded.\n"
-            "Please wait a minute and try again.\n"
+        name = (
+            addr.get("attraction")
+            or addr.get("tourism")
+            or addr.get("leisure")
+            or addr.get("building")
+            or addr.get("amenity")
+            or addr.get("suburb")
+            or addr.get("neighbourhood")
+            or addr.get("city")
+            or addr.get("town")
         )
-        sys.exit(1)
 
-    except GeocoderServiceError:
-        print(
-            "\nERROR: Geocoding service rejected the request.\n"
-            "You may have hit the rate limit.\n"
-            "Please wait about 60 seconds before retrying.\n"
-        )
-        sys.exit(1)
+        city = addr.get("city") or addr.get("town") or addr.get("county")
+
+        if name and city and name != city:
+            return f"{name}, {city}"
+
+        return name or city or "Unknown location"
+
+    except (GeocoderTimedOut, GeocoderServiceError):
+
+        print("⚠️ Geocoder service unavailable or rate limited.")
+        print("Please wait ~30–60 seconds before retrying.")
+        raise SystemExit(1)
