@@ -2,12 +2,12 @@ import sys
 from pathlib import Path
 from vlogify.metadata import extract_gps
 from vlogify.geocode import reverse_geocode
-
+from vlogify.location_cache import LocationCache
 
 SUPPORTED_EXT = {".mov", ".mp4", ".jpg", ".jpeg", ".heic"}
+cache = LocationCache()
 
-
-def process_file(path: Path):
+def process_file(path, cache):
 
     gps = extract_gps(str(path))
 
@@ -16,21 +16,24 @@ def process_file(path: Path):
         return
 
     lat, lon = gps
-    location = reverse_geocode(lat, lon)
+
+    location = cache.get(lat, lon)
+
+    if not location:
+        location = reverse_geocode(lat, lon)
+        cache.set(lat, lon, location)
 
     print(f"{path.name} → {location}")
 
 
-def process_directory(path: Path):
+def process_directory(path):
+
+    cache = LocationCache()
 
     files = [f for f in path.iterdir() if f.suffix.lower() in SUPPORTED_EXT]
 
-    if not files:
-        print("No supported media files found.")
-        return
-
     for file in sorted(files):
-        process_file(file)
+        process_file(file, cache)
 
 
 def main():

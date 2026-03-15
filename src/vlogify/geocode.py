@@ -30,15 +30,11 @@ def _short_name(location):
 
     addr = location.raw.get("address", {})
 
-    # priority order for nice vlog captions
-    name = (
-        addr.get("aeroway")
-        or addr.get("tourism")
-        or addr.get("attraction")
-        or addr.get("leisure")
-        or addr.get("building")
-        or addr.get("amenity")
-    )
+    # prefer large meaningful landmarks
+    airport = addr.get("aeroway")
+    tourism = addr.get("tourism")
+    attraction = addr.get("attraction")
+    leisure = addr.get("leisure")
 
     city = (
         addr.get("city")
@@ -46,12 +42,22 @@ def _short_name(location):
         or addr.get("village")
     )
 
-    if name and city:
-        return f"{name}, {city}"
+    suburb = addr.get("suburb") or addr.get("neighbourhood")
 
-    if name:
-        return name
+    # airports
+    if airport:
+        return f"{airport}, {city}" if city else airport
 
+    # landmarks
+    if tourism or attraction or leisure:
+        name = tourism or attraction or leisure
+        return f"{name}, {city}" if city else name
+
+    # fallback: suburb + city
+    if suburb and city:
+        return f"{suburb}, {city}"
+
+    # fallback: city
     if city:
         return city
 
