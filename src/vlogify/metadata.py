@@ -1,10 +1,25 @@
-import exifread
+import exiftool
 
-def extract_gps(image_path):
-    with open(image_path, "rb") as f:
-        tags = exifread.process_file(f)
 
-    return {
-        "lat": tags.get("GPS GPSLatitude"),
-        "lon": tags.get("GPS GPSLongitude"),
-    }
+def extract_gps(file_path):
+    """
+    Extract GPS coordinates from photo or video.
+    Returns (lat, lon) or None.
+    """
+
+    with exiftool.ExifToolHelper() as et:
+        metadata = et.get_metadata(file_path)
+
+    if not metadata:
+        return None
+
+    data = metadata[0]
+
+    lat = data.get("Composite:GPSLatitude")
+    lon = data.get("Composite:GPSLongitude")
+
+    if lat and lon:
+        return lat, lon
+
+    return None
+
