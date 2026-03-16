@@ -31,6 +31,8 @@ pip install -e .
 ```
 
 Notes:
+- `exiftool` is required for reading GPS and timestamps from media.
+- `ffmpeg` must include the `drawtext` filter (most builds do). If embedding fails, reinstall with freetype support.
 - `brew` is macOS-only. The project itself is Python and should be portable, but you’ll need a working `ffmpeg` on your system.
 - For Linux/Windows, you can typically install `ffmpeg` via your OS package manager or a static build and then run the same `pip install -e .`. See the evaluation notes below for details.
 
@@ -62,6 +64,12 @@ Supported extensions:
 
 Notes:
 - HEIC inputs are written as `.jpg` when embedding, to ensure broad compatibility.
+
+## Constraints and Limitations
+
+- Requires location (GPS) metadata in your files. If Location Services were off, you’ll get `No GPS metadata`.
+- Reverse geocoding uses OpenStreetMap via Nominatim. Requests are rate-limited and network-dependent, so you may see `Unknown location` if the service is unavailable.
+- Location labels reveal precise places. Double-check outputs before sharing, especially for home or private locations.
 
 ### Font and Placement
 

@@ -2,7 +2,7 @@
 name = "iphone-vlogify"
 version = "0.1.0"
 description = "Automatically generate vlog captions from iPhone photos and videos"
-authors = [{name="Your Name"}]
+authors = [{name="Benjamin Chu", email="benchu99@hotmail.com"}]
 readme = "README.md"
 requires-python = ">=3.9"
 
@@ -20,4 +20,3 @@ vlogify = "vlogify.cli:main"
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
-
