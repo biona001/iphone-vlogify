@@ -8,6 +8,8 @@ This is a hobby project I made to complement [aidvid.com](https://www.aidvid.com
 
 [![Watch the demo](https://img.youtube.com/vi/Q0O7J4ktobQ/0.jpg)](https://www.youtube.com/watch?v=Q0O7J4ktobQ)
 
+The location "Royal Hawaiian Hotel, Honolulu" was add by `vlogify` automatically!
+
 ## Installation
 
 Clone the repo:
@@ -53,6 +55,20 @@ IMG_1441.MOV → Royal Hawaiian Hotel, Honolulu
 IMG_1651.MOV → USS Arizona, Waipahu
 ```
 
+### Font and Placement
+
+By default, a “vlog-like” font is chosen from common macOS fonts. You can set a custom font:
+
+```bash
+VLOGIFY_FONT_PATH=/path/to/your/font.ttf vlogify --embed ~/Desktop/2026_March_Hawaii
+```
+
+Corner placement:
+
+```bash
+vlogify --embed --corner bottom-right ~/Desktop/2026_March_Hawaii
+```
+
 ## Supported Input File Formats
 
 Supported extensions:
@@ -70,17 +86,3 @@ Notes:
 - Requires location (GPS) metadata in your files. If Location Services were off, you’ll get `No GPS metadata`.
 - Reverse geocoding uses OpenStreetMap via Nominatim. Requests are rate-limited and network-dependent, so you may see `Unknown location` if the service is unavailable.
 - Location labels reveal precise places. Double-check outputs before sharing, especially for home or private locations.
-
-### Font and Placement
-
-By default, a “vlog-like” font is chosen from common macOS fonts. You can set a custom font:
-
-```bash
-VLOGIFY_FONT_PATH=/path/to/your/font.ttf vlogify --embed ~/Desktop/2026_March_Hawaii
-```
-
-Corner placement:
-
-```bash
-vlogify --embed --corner bottom-right ~/Desktop/2026_March_Hawaii
-```
