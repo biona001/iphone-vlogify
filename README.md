@@ -1,8 +1,8 @@
-# Vlogify your iPhone Videos and Live Photos
+# Automatically insert location labels for your iPhone Videos and Live Photos
 
 Generate a clean, vlog-style location label for each photo/video, and optionally burn it into the media. Obviously, this tool only works when your photos/videos include location (GPS) metadata. Make sure Location Services are enabled for your camera app so new media is saved with location information.
 
-This is a hobby project I made to complement [aidvid.com](https://www.aidvid.com/) (without pay).
+This is a hobby project I made to complement [aidvid.com](https://www.aidvid.com/) (without pay). If it is unclear what's the point of this project, using aidvid.com once will probably clear things up. 
 
 ## Demo
 
