@@ -63,24 +63,6 @@ Supported extensions:
 Notes:
 - HEIC inputs are written as `.jpg` when embedding, to ensure broad compatibility.
 
-## Embed Labels Into Media
-
-Burn the label directly into videos/images (creates new files):
-
-```bash
-vlogify --embed ~/Desktop/2026_March_Hawaii
-```
-
-Default outputs:
-- Single file: `*_vlogify` next to the original file.
-- Directory: `vlogify_out/` inside the target directory.
-
-You can override the output directory:
-
-```bash
-vlogify --embed --out-dir ~/Desktop/vlogify_out ~/Desktop/2026_March_Hawaii
-```
-
 ### Font and Placement
 
 By default, a “vlog-like” font is chosen from common macOS fonts. You can set a custom font:
