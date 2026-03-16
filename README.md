@@ -2,14 +2,25 @@
 
 Generate a clean, vlog-style location label for each photo/video, and optionally burn it into the media.
 
-Inspired by [aidvid.com](https://www.aidvid.com/).
+This is a hobby project I made to complement [aidvid.com](https://www.aidvid.com/) (without pay).
+
+## Demo
+
+[![Watch the demo](https://img.youtube.com/vi/Q0O7J4ktobQ/0.jpg)](https://www.youtube.com/watch?v=Q0O7J4ktobQ)
 
 ## Installation
 
-Install package dependencies:
+Clone the repo:
 
 ```bash
-brew install ffmpeg-full
+git clone https://github.com/biona001/iphone-vlogify.git
+cd iphone-vlogify
+```
+
+Install dependencies (macOS):
+
+```bash
+brew install ffmpeg-full exiftool
 brew link ffmpeg-full
 ```
 
@@ -19,18 +30,25 @@ Then install the package:
 pip install -e .
 ```
 
+Notes:
+- `brew` is macOS-only. The project itself is Python and should be portable, but you’ll need a working `ffmpeg` on your system.
+- For Linux/Windows, you can typically install `ffmpeg` via your OS package manager or a static build and then run the same `pip install -e .`. See the evaluation notes below for details.
+
 ## Quick Start
 
+To label video or photo with a vlog-style location label, simply execute
+
 ```bash
-vlogify ~/Desktop/2026_March_Hawaii
+vlogify --embed --out-dir OUTPUT_DIR FILE_OR_FOLDER
 ```
 
-Example output:
+Without the `--embed` keyword, you'll only get the location of the files (no video output)
 
 ```
-IMG_1446.MOV → Waikīkī, Honolulu
-IMG_1450.MP4 → Island Vintage Shave Ice, Honolulu
-IMG_1452.MOV → 1945 Kalākaua Ave, Honolulu, Hawaii
+IMG_1464.MOV → 2330 Kalākaua Avenue, Waikīkī, Honolulu
+IMG_1500.MOV → Hokulani Waikiki, Honolulu
+IMG_1441.MOV → Royal Hawaiian Hotel, Honolulu
+IMG_1651.MOV → USS Arizona, Waipahu
 ```
 
 ## Embed Labels Into Media
