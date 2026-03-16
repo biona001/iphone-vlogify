@@ -1,6 +1,6 @@
 # Vlogify your iPhone Videos and Live Photos
 
-Generate a clean, vlog-style location label for each photo/video, and optionally burn it into the media.
+Generate a clean, vlog-style location label for each photo/video, and optionally burn it into the media. Obviously, this tool only works when your photos/videos include location (GPS) metadata. Make sure Location Services are enabled for your camera app so new media is saved with location information.
 
 This is a hobby project I made to complement [aidvid.com](https://www.aidvid.com/) (without pay).
 
@@ -51,6 +51,18 @@ IMG_1441.MOV → Royal Hawaiian Hotel, Honolulu
 IMG_1651.MOV → USS Arizona, Waipahu
 ```
 
+## Supported Input File Formats
+
+Supported extensions:
+- `.mov`
+- `.mp4`
+- `.jpg`
+- `.jpeg`
+- `.heic`
+
+Notes:
+- HEIC inputs are written as `.jpg` when embedding, to ensure broad compatibility.
+
 ## Embed Labels Into Media
 
 Burn the label directly into videos/images (creates new files):
@@ -82,6 +94,3 @@ Corner placement:
 ```bash
 vlogify --embed --corner bottom-right ~/Desktop/2026_March_Hawaii
 ```
-
-Notes:
-- HEIC inputs are written as `.jpg` when embedding, to ensure broad compatibility.
