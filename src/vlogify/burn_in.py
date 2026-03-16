@@ -1,6 +1,8 @@
 import os
 import shutil
 import subprocess
+import tempfile
+from typing import Optional
 from pathlib import Path
 
 import ffmpeg
@@ -64,6 +66,28 @@ def _ensure_drawtext_available():
     return _DRAW_TEXT_OK
 
 
+def _convert_heic_with_sips(input_path: Path) -> Optional[Path]:
+    sips_bin = shutil.which("sips")
+    if not sips_bin:
+        return None
+
+    temp_dir = Path(tempfile.mkdtemp(prefix="vlogify_heic_"))
+    output_path = temp_dir / f"{input_path.stem}.jpg"
+
+    try:
+        subprocess.run(
+            [sips_bin, "-s", "format", "jpeg", str(input_path), "--out", str(output_path)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        return None
+
+    return output_path
+
+
 def _has_audio(input_path: Path):
     try:
         probe = ffmpeg.probe(str(input_path))
@@ -116,7 +140,16 @@ def burn_in_text(input_path: Path, output_path: Path, text: str, corner: str = "
     if font_path:
         drawtext_args["fontfile"] = font_path
 
-    stream = ffmpeg.input(str(input_path))
+    temp_dir = None
+    input_for_ffmpeg = input_path
+
+    if input_path.suffix.lower() in {".heic", ".heif"}:
+        converted = _convert_heic_with_sips(input_path)
+        if converted:
+            input_for_ffmpeg = converted
+            temp_dir = converted.parent
+
+    stream = ffmpeg.input(str(input_for_ffmpeg))
     video = stream.video.filter("drawtext", **drawtext_args)
 
     def _run_or_raise(stream):
@@ -128,45 +161,49 @@ def burn_in_text(input_path: Path, output_path: Path, text: str, corner: str = "
                 raise RuntimeError(stderr.strip()) from exc
             raise
 
-    if input_path.suffix.lower() in {".mov", ".mp4"}:
-        audio_present = _has_audio(input_path)
+    try:
+        if input_path.suffix.lower() in {".mov", ".mp4"}:
+            audio_present = _has_audio(input_path)
 
-        def _render_with_audio():
-            audio = stream.audio
-            out = ffmpeg.output(
-                video,
-                audio,
-                str(output_path),
-                vcodec="libx264",
-                acodec="copy",
-                movflags="faststart",
-            )
-            _run_or_raise(out)
+            def _render_with_audio():
+                audio = stream.audio
+                out = ffmpeg.output(
+                    video,
+                    audio,
+                    str(output_path),
+                    vcodec="libx264",
+                    acodec="copy",
+                    movflags="faststart",
+                )
+                _run_or_raise(out)
 
-        def _render_without_audio():
-            out = ffmpeg.output(
-                video,
-                str(output_path),
-                vcodec="libx264",
-                movflags="faststart",
-            )
-            _run_or_raise(out)
+            def _render_without_audio():
+                out = ffmpeg.output(
+                    video,
+                    str(output_path),
+                    vcodec="libx264",
+                    movflags="faststart",
+                )
+                _run_or_raise(out)
 
-        if audio_present is False:
-            _render_without_audio()
-        elif audio_present is True:
-            _render_with_audio()
-        else:
-            try:
-                _render_with_audio()
-            except ffmpeg.Error:
+            if audio_present is False:
                 _render_without_audio()
-    else:
-        vcodec = "png" if output_path.suffix.lower() == ".png" else "mjpeg"
-        out = ffmpeg.output(
-            video,
-            str(output_path),
-            vcodec=vcodec,
-            qscale=2,
-        )
-        _run_or_raise(out)
+            elif audio_present is True:
+                _render_with_audio()
+            else:
+                try:
+                    _render_with_audio()
+                except ffmpeg.Error:
+                    _render_without_audio()
+        else:
+            vcodec = "png" if output_path.suffix.lower() == ".png" else "mjpeg"
+            out = ffmpeg.output(
+                video,
+                str(output_path),
+                vcodec=vcodec,
+                qscale=2,
+            )
+            _run_or_raise(out)
+    finally:
+        if temp_dir and temp_dir.exists():
+            shutil.rmtree(temp_dir, ignore_errors=True)

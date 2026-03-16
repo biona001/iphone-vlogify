@@ -95,6 +95,7 @@ def process_directory(path: Path, cache: LocationCache, embed: bool, out_dir: Op
         gps = extract_gps(str(file))
 
         if not gps:
+            print(f"{file.name} → No GPS metadata")
             continue
 
         lat, lon = gps
