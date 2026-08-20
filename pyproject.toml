@@ -12,6 +12,7 @@ dependencies = [
     "PyExifTool",
     "exifread",
     "ffmpeg-python",
+    "Pillow",
 ]
 
 [project.optional-dependencies]

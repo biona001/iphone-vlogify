@@ -65,6 +65,8 @@ IMG_1651.MOV → USS Arizona, Waipahu
 - In folder mode, a weak label can inherit a clearly stronger label from media
   captured within 750 meters and two hours. Distinct strong landmarks are kept
   separate.
+- Moderately long labels shrink slightly to stay on one line. Longer labels
+  wrap based on the media's aspect ratio and use one continuous background.
 
 These rules are generic and do not require a trip-specific override file.
 
