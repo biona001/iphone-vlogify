@@ -55,6 +55,19 @@ IMG_1441.MOV → Royal Hawaiian Hotel, Honolulu
 IMG_1651.MOV → USS Arizona, Waipahu
 ```
 
+### Smart Location Labels
+
+`vlogify` favors recognizable destinations over raw map details:
+
+- Airport gates and parking positions fall back to the airport name.
+- Street addresses are compared with a broader city or district label.
+- Detailed landmarks are kept when they are more useful than the broader area.
+- In folder mode, a weak label can inherit a clearly stronger label from media
+  captured within 750 meters and two hours. Distinct strong landmarks are kept
+  separate.
+
+These rules are generic and do not require a trip-specific override file.
+
 ### Font and Placement
 
 By default, a “vlog-like” font is chosen from common macOS fonts. You can set a custom font:

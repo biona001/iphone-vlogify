@@ -1,14 +1,35 @@
 import argparse
+import math
 import sys
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 from vlogify.metadata import extract_gps
-from vlogify.geocode import reverse_geocode
+from vlogify.geocode import (
+    GOOD_LABEL_QUALITY,
+    GeocodeResult,
+    label_quality,
+    reverse_geocode,
+    reverse_geocode_result,
+)
 from vlogify.location_cache import LocationCache
 from vlogify.metadata import extract_timestamp
 from vlogify.burn_in import burn_in_text, SUPPORTED_IMAGE_OUT
 
 SUPPORTED_EXT = {".mov", ".mp4", ".jpg", ".jpeg", ".heic"}
+NEARBY_RADIUS_METERS = 750
+NEARBY_TIME_WINDOW = timedelta(hours=2)
+
+
+@dataclass
+class LocatedFile:
+    path: Path
+    lat: float
+    lon: float
+    timestamp: Optional[datetime]
+    label: str = ""
+    quality: int = 0
 
 
 def _output_path_for_file(path: Path, out_dir: Optional[Path]):
@@ -76,6 +97,56 @@ def extract_all_gps(files):
 
     return results
 
+
+def _distance_meters(first: LocatedFile, second: LocatedFile):
+    """Approximate great-circle distance between two media locations."""
+    earth_radius_meters = 6_371_000
+    lat1 = math.radians(first.lat)
+    lat2 = math.radians(second.lat)
+    delta_lat = lat2 - lat1
+    delta_lon = math.radians(second.lon - first.lon)
+
+    haversine = (
+        math.sin(delta_lat / 2) ** 2
+        + math.cos(lat1) * math.cos(lat2) * math.sin(delta_lon / 2) ** 2
+    )
+    return 2 * earth_radius_meters * math.asin(math.sqrt(haversine))
+
+
+def _nearby_in_time(first: LocatedFile, second: LocatedFile):
+    if first.timestamp is None or second.timestamp is None:
+        return False
+    return abs(first.timestamp - second.timestamp) <= NEARBY_TIME_WINDOW
+
+
+def _consolidate_nearby_labels(files):
+    """Replace weak labels only when a nearby clip has a clearly better one.
+
+    Strong labels are never replaced, which prevents nearby businesses or
+    landmarks in dense areas from being flattened into a single location.
+    """
+    strong_files = [item for item in files if item.quality >= GOOD_LABEL_QUALITY]
+
+    for current in files:
+        if current.quality >= GOOD_LABEL_QUALITY:
+            continue
+
+        stronger_neighbours = []
+        for candidate in strong_files:
+            if not _nearby_in_time(current, candidate):
+                continue
+
+            distance = _distance_meters(current, candidate)
+            if distance <= NEARBY_RADIUS_METERS:
+                stronger_neighbours.append((candidate.quality, -distance, candidate.label))
+
+        if stronger_neighbours:
+            quality, _, label = max(stronger_neighbours)
+            current.label = label
+            current.quality = quality
+
+    return files
+
 def process_directory(path: Path, cache: LocationCache, embed: bool, out_dir: Optional[Path], corner: str):
 
     files = [
@@ -101,27 +172,37 @@ def process_directory(path: Path, cache: LocationCache, embed: bool, out_dir: Op
         lat, lon = gps
         timestamp = extract_timestamp(str(file))
 
-        files_with_coords.append((file, lat, lon, timestamp))
+        files_with_coords.append(LocatedFile(file, lat, lon, timestamp))
 
     if not files_with_coords:
         print("No GPS metadata found.")
         return
 
     # Sort by timestamp (fallback to filename)
-    files_with_coords.sort(key=lambda x: (x[3] or 0, x[0].name))
+    files_with_coords.sort(
+        key=lambda x: (x.timestamp is None, x.timestamp or datetime.min, x.path.name)
+    )
 
-    for file, lat, lon, _ in files_with_coords:
-        location = cache.get(lat, lon)
+    for item in files_with_coords:
+        location = cache.get(item.lat, item.lon)
 
-        if not location:
-            location = reverse_geocode(lat, lon)
-            cache.set(lat, lon, location)
+        if location:
+            result = GeocodeResult(location, label_quality(location))
+        else:
+            result = reverse_geocode_result(item.lat, item.lon)
+            cache.set(item.lat, item.lon, result.label)
 
-        print(f"{file.name} → {location}")
+        item.label = result.label
+        item.quality = result.quality
+
+    _consolidate_nearby_labels(files_with_coords)
+
+    for item in files_with_coords:
+        print(f"{item.path.name} → {item.label}")
 
         if embed:
-            output_path = _output_path_for_embed(file, out_dir)
-            burn_in_text(file, output_path, location, corner=corner)
+            output_path = _output_path_for_embed(item.path, out_dir)
+            burn_in_text(item.path, output_path, item.label, corner=corner)
 
 def main():
     parser = argparse.ArgumentParser(description="Add a location label to your iPhone media.")
